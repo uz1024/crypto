@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEY-CIPHER PRO — Клавиатурный Дешифратор</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter, JetBrains Mono, Noto Sans KR/Hebrew/Arabic for crisp multilingual symbols -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&family=Noto+Sans+Arabic:wght@600;700&family=Noto+Sans+Hebrew:wght@600;700&family=Noto+Sans+KR:wght@600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-deep: #0b0719;
+            --bg-panel: rgba(24, 18, 48, 0.72);
+            --border-glow: rgba(139, 92, 246, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans KR', 'Noto Sans Hebrew', 'Noto Sans Arabic', sans-serif;
+            background-color: var(--bg-deep);
+            color: #f8fafc;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .mono-font {
+            font-family: 'JetBrains Mono', 'Noto Sans KR', 'Noto Sans Hebrew', 'Noto Sans Arabic', monospace;
+        }
+
+        /* Cosmic Ambient Blobs */
+        .cosmic-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 15% 15%, rgba(236, 72, 153, 0.16), transparent 38%),
+                radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.16), transparent 38%),
+                radial-gradient(circle at 50% 85%, rgba(139, 92, 246, 0.2), transparent 45%),
+                linear-gradient(180deg, #090514 0%, #110a26 50%, #090514 100%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+            background-size: 36px 36px;
+            mask-image: radial-gradient(circle at center, black 55%, transparent 100%);
+        }
+
+        /* Glassmorphism Panels */
+        .glass-card {
+            background: rgba(24, 19, 46, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 12px 35px -8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        }
+
+        /* Mechanical Keycap Styling */
+        .keycap {
+            position: relative;
+            background: linear-gradient(180deg, rgba(46, 38, 84, 0.95) 0%, rgba(28, 22, 56, 0.98) 100%);
+            border: 1px solid rgba(167, 139, 250, 0.28);
+            border-bottom: 4px solid #120d29;
+            border-radius: 12px;
+            box-shadow: 
+                0 4px 10px rgba(0, 0, 0, 0.45),
+                inset 0 1px 1px rgba(255, 255, 255, 0.18);
+            transition: transform 0.08s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        border-color 0.15s ease,
+                        background 0.15s ease,
+                        box-shadow 0.15s ease;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .keycap:hover {
+            background: linear-gradient(180deg, rgba(64, 52, 115, 0.98) 0%, rgba(39, 31, 77, 1) 100%);
+            border-color: rgba(56, 189, 248, 0.6);
+            transform: translateY(-1px);
+            box-shadow: 
+                0 6px 15px rgba(56, 189, 248, 0.2),
+                inset 0 1px 2px rgba(255, 255, 255, 0.25);
+        }
+
+        .keycap:active, .keycap.key-pressed {
+            transform: translateY(3px);
+            border-bottom-width: 1px;
+        }
+
+        /* Keycap Feedback States */
+        .keycap.key-correct {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+            border-color: #6ee7b7 !important;
+            border-bottom-color: #064e3b !important;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.75), inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+            transform: scale(1.06);
+            z-index: 10;
+        }
+
+        .keycap.key-wrong {
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+            border-color: #fca5a5 !important;
+            border-bottom-color: #7f1d1d !important;
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.75) !important;
+            animation: shakeKey 0.35s ease;
+        }
+
+        .keycap.key-hint {
+            border-color: #fbbf24 !important;
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.35) 0%, rgba(180, 83, 9, 0.45) 100%) !important;
+            box-shadow: 0 0 22px rgba(251, 191, 36, 0.8), inset 0 0 12px rgba(251, 191, 36, 0.4) !important;
+            animation: pulseHint 1s infinite alternate;
+        }
+
+        .keycap.key-reference {
+            border-color: #38bdf8 !important;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.55) !important;
+        }
+
+        /* Animations */
+        @keyframes pulseHint {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.06); }
+        }
+
+        @keyframes shakeKey {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+            70% { transform: scale(1.12) rotate(2deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        @keyframes floatSymbol {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .animate-pop {
+            animation: popIn 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .animate-float {
+            animation: floatSymbol 3s ease-in-out infinite;
+        }
+
+        .card-shake {
+            animation: shakeKey 0.38s ease;
+        }
+
+        /* Active Word Slot Glow */
+        .slot-active {
+            border-color: #38bdf8 !important;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.45), inset 0 0 12px rgba(56, 189, 248, 0.2);
+            animation: slotPulse 1.4s infinite alternate ease-in-out;
+        }
+
+        @keyframes slotPulse {
+            0% { border-color: rgba(56, 189, 248, 0.6); transform: translateY(0); }
+            100% { border-color: rgba(236, 72, 153, 0.9); transform: translateY(-2px); }
+        }
+
+        /* Alphabet Strip Item */
+        .alpha-cell {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .alpha-cell.alpha-source {
+            background: linear-gradient(135deg, #38bdf8, #2563eb);
+            color: #fff;
+            border-color: #bae6fd;
+            transform: scale(1.18) translateY(-2px);
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.8);
+            z-index: 10;
+        }
+        .alpha-cell.alpha-target-hint {
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+            color: #fff;
+            border-color: #fde68a;
+            transform: scale(1.18) translateY(-2px);
+            box-shadow: 0 0 16px rgba(251, 191, 36, 0.85);
+            z-index: 10;
+        }
+
+        /* Custom Scrollbar for level strip on mobile */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col justify-between min-h-screen p-2 sm:p-4 select-none">
+
+    <!-- Cosmic Ambient Background -->
+    <div class="cosmic-bg"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- TOP HEADER & LEVEL BAR -->
+    <header class="w-full max-w-6xl mx-auto flex flex-col gap-2.5">
+        <!-- Row 1: Brand + Controls + Stats -->
+        <div class="glass-card rounded-2xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
+            <!-- Brand Title -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500 via-purple-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                    <i class="fa-solid fa-keyboard text-white text-lg"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-black text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-fuchsia-200 to-cyan-300 bg-clip-text text-transparent">
+                            KEY-CIPHER PRO
+                        </h1>
+                        <span class="hidden md:inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30">
+                            Симулятор-Дешифратор
+                        </span>
+                    </div>
+                    <p id="header-level-subtitle" class="text-xs text-slate-300 font-medium">
+                        Уровень 1: Прямой контакт
+                    </p>
+                </div>
+            </div>
+
+            <!-- Live Stats & Utility Buttons -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                <!-- Word Progress Pill -->
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900/70 border border-white/10 flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-cyan-400 text-xs"></i>
+                    <span class="text-xs text-slate-400">Слово:</span>
+                    <span id="stat-word-progress" class="text-xs sm:text-sm font-bold text-white mono-font">1 / 3</span>
+                </div>
+
+                <!-- Combo Pill -->
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900/70 border border-white/10 flex items-center gap-1.5">
+                    <i class="fa-solid fa-fire-flame-curved text-amber-400 text-xs"></i>
+                    <span class="text-xs text-slate-400 hidden sm:inline">Комбо:</span>
+                    <span id="stat-combo" class="text-xs sm:text-sm font-extrabold text-amber-300 mono-font">x1</span>
+                </div>
+
+                <!-- Score Pill -->
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900/70 border border-white/10 flex items-center gap-1.5">
+                    <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+                    <span class="text-xs text-slate-400 hidden sm:inline">Очки:</span>
+                    <span id="stat-score" class="text-xs sm:text-sm font-extrabold text-emerald-300 mono-font">0</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <button id="btn-hint" onclick="triggerHint()" title="Подсказка: подсветить нужную клавишу"
+                    class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/25 to-orange-500/25 hover:from-amber-500/40 hover:to-orange-500/40 border border-amber-400/40 text-amber-200 text-xs font-bold flex items-center gap-1.5 transition active:scale-95">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+                    <span>Подсказка</span>
+                </button>
+
+                <button id="btn-toggle-alpha" onclick="toggleAlphabetBar()" title="Показать/скрыть ленту русского алфавита"
+                    class="px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-white/15 text-cyan-300 text-xs font-bold flex items-center gap-1.5 transition active:scale-95">
+                    <i class="fa-solid fa-arrow-down-a-z"></i>
+                    <span class="hidden md:inline">Алфавит</span>
+                </button>
+
+                <button id="btn-expert-mode" onclick="toggleExpertMode()" title="Скрыть/показать русские буквы на клавишах для тренировки памяти"
+                    class="px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-white/15 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition active:scale-95">
+                    <i class="fa-solid fa-eye" id="expert-icon"></i>
+                    <span class="hidden lg:inline" id="expert-label">РУС: ВКЛ</span>
+                </button>
+
+                <button id="btn-sound" onclick="toggleSound()" title="Включить/выключить звук клавиш"
+                    class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-white/15 text-emerald-300 flex items-center justify-center transition active:scale-95">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Row 2: 10-Level Interactive Selector Strip -->
+        <div class="glass-card rounded-2xl p-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-2.5 shrink-0 flex items-center gap-1.5">
+                <i class="fa-solid fa-sliders text-fuchsia-400"></i>
+                <span>Уровни:</span>
+            </div>
+            <div id="level-buttons-container" class="flex items-center gap-1.5 flex-1">
+                <!-- Dynamically populated level 1..10 pills -->
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN STAGE: WORD SLOTS + CENTRAL STIMULUS CARD + ALPHABET HELPER -->
+    <main class="w-full max-w-6xl mx-auto my-2 flex-1 flex flex-col justify-center gap-3">
+
+        <!-- 1. Word Assembly Section -->
+        <section class="glass-card rounded-2xl px-4 py-3 flex flex-col items-center justify-center relative overflow-hidden">
+            <!-- Top mini bar: Category + Skip word button -->
+            <div class="w-full flex items-center justify-between text-xs mb-2">
+                <div class="flex items-center gap-2">
+                    <span id="word-theme-badge" class="px-2.5 py-0.5 rounded-full bg-indigo-500/25 border border-indigo-400/30 text-indigo-200 font-semibold">
+                        Тема: Космос
+                    </span>
+                    <span id="level-mechanic-pill" class="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-fuchsia-500/20 border border-fuchsia-400/30 text-fuchsia-200 font-medium">
+                        Прямой ввод
+                    </span>
+                </div>
+                <button onclick="skipCurrentWord()" class="text-slate-400 hover:text-white transition flex items-center gap-1 text-xs font-medium">
+                    <i class="fa-solid fa-rotate-right text-[11px]"></i>
+                    <span>Другое слово</span>
+                </button>
+            </div>
+
+            <!-- Word Letter Slots Container -->
+            <div id="word-slots-container" class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 my-1">
+                <!-- Slots generated via JS -->
+            </div>
+        </section>
+
+        <!-- 2. Central Cipher Card (Big Stimulus Symbol + Rule Instructions) -->
+        <section id="stimulus-card" class="glass-card rounded-3xl p-4 sm:p-5 flex flex-col items-center justify-center relative overflow-hidden border border-purple-500/30 transition-all">
+            <!-- Decorative ambient glow behind symbol -->
+            <div id="card-ambient-glow" class="w-44 h-44 rounded-full bg-gradient-to-tr from-fuchsia-600/25 via-cyan-400/25 to-indigo-500/25 blur-2xl absolute pointer-events-none"></div>
+
+            <!-- Script / Mode Header Badge -->
+            <div class="flex flex-wrap items-center justify-center gap-2 mb-1 z-10">
+                <span id="stimulus-script-badge" class="px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-cyan-500/20 text-cyan-200 border border-cyan-400/30">
+                    Русский алфавит
+                </span>
+                <span id="stimulus-phonetic-badge" class="hidden px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/10 text-amber-200 border border-white/15">
+                    Символ
+                </span>
+            </div>
+
+            <!-- HUGE Stimulus Symbol + Optional Shift Visual Formula -->
+            <div class="flex items-center justify-center gap-4 sm:gap-8 my-1 z-10">
+                <!-- Left context (optional for step-by-step visualization) -->
+                <div id="stimulus-main-box" class="relative flex flex-col items-center justify-center">
+                    <div id="stimulus-symbol" class="text-6xl sm:text-7xl md:text-8xl font-black tracking-tight text-white drop-shadow-[0_0_25px_rgba(236,72,153,0.55)] mono-font animate-float select-none leading-none py-1">
+                        А
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prominent Instruction / Shift Modifier Badge -->
+            <div id="instruction-badge-container" class="mt-2 z-10 flex flex-col items-center gap-1.5">
+                <div id="instruction-badge" class="px-4 py-1.5 rounded-2xl font-extrabold text-sm sm:text-base flex items-center gap-2 shadow-lg bg-gradient-to-r from-indigo-600/80 via-purple-600/80 to-fuchsia-600/80 border border-white/20 text-white">
+                    <span>Нажми эту букву на клавиатуре</span>
+                </div>
+                <p id="instruction-subtext" class="text-xs text-slate-300 text-center max-w-xl">
+                    Ищи букву на экране или нажимай соответствующую клавишу на своей клавиатуре
+                </p>
+            </div>
+        </section>
+
+        <!-- 3. Interactive Russian Alphabet Strip (32 letters А..Я) -->
+        <section id="alphabet-strip-section" class="glass-card rounded-2xl px-3 py-2 flex flex-col gap-1.5 transition-all">
+            <div class="flex items-center justify-between text-[11px] text-slate-300 px-1">
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1">
+                        <i class="fa-solid fa-compass"></i> Шкала алфавита (32 буквы без Ё):
+                    </span>
+                    <span id="alpha-helper-caption" class="text-slate-400 hidden sm:inline">
+                        Голубым подсвечена исходная буква — отсчитай сдвиг по стрелке!
+                    </span>
+                </div>
+                <div class="flex items-center gap-3 text-[11px]">
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-cyan-400 inline-block"></span> Исходная</span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-amber-400 inline-block"></span> Цель (Подсказка)</span>
+                </div>
+            </div>
+            <div id="alphabet-strip-cells" class="grid grid-cols-16 sm:flex sm:flex-wrap items-center justify-center gap-1">
+                <!-- 32 Russian letters А..Я populated by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- BOTTOM INTERACTIVE ON-SCREEN KEYBOARD (32 KEYS, 3 ROWS) -->
+    <footer class="w-full max-w-6xl mx-auto">
+        <div class="glass-card rounded-3xl p-2.5 sm:p-4 border border-white/15 shadow-2xl">
+            <!-- Keyboard Top Info Strip -->
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2 px-1 text-xs text-slate-400">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Работает клик мышью, тач-экран и <strong class="text-slate-200">физическая клавиатура</strong> (в любой раскладке RU/EN)</span>
+                </div>
+                <div id="keyboard-layout-indicator" class="font-semibold text-cyan-300">
+                    Раскладка клавиш: ЙЦУКЕН + QWERTY
+                </div>
+            </div>
+
+            <!-- 3 Keyboard Rows Container -->
+            <div id="keyboard-rows" class="flex flex-col gap-1.5 sm:gap-2">
+                <!-- Row 1 (12 keys), Row 2 (11 keys), Row 3 (9 keys) populated via JS -->
+            </div>
+        </div>
+    </footer>
+
+    <!-- LEVEL COMPLETE / WORD CELEBRATION MODAL -->
+    <div id="level-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-card rounded-3xl max-w-md w-full p-6 border border-fuchsia-400/40 text-center flex flex-col items-center gap-4 animate-pop">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 via-fuchsia-500 to-cyan-400 flex items-center justify-center shadow-xl shadow-fuchsia-500/30">
+                <i class="fa-solid fa-trophy text-3xl text-white"></i>
+            </div>
+            <div>
+                <span id="modal-badge" class="text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                    Уровень пройден!
+                </span>
+                <h2 id="modal-title" class="text-2xl font-black text-white mt-2">
+                    Отличная дешифровка!
+                </h2>
+                <p id="modal-desc" class="text-sm text-slate-300 mt-1">
+                    Все слова этого уровня успешно разгаданы.
+                </p>
+            </div>
+
+            <div class="w-full grid grid-cols-2 gap-3 bg-slate-900/60 p-3 rounded-2xl border border-white/10">
+                <div>
+                    <div class="text-xs text-slate-400">Набрано очков</div>
+                    <div id="modal-score" class="text-xl font-black text-emerald-300 mono-font">0</div>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-400">Макс. комбо</div>
+                    <div id="modal-combo" class="text-xl font-black text-amber-300 mono-font">x1</div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2.5 w-full mt-1">
+                <button onclick="stayOnCurrentLevel()" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/15 text-slate-200 font-bold text-sm transition">
+                    Ещё слова здесь
+                </button>
+                <button id="modal-next-btn" onclick="goToNextLevel()" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-fuchsia-500 via-purple-600 to-cyan-500 hover:opacity-95 text-white font-extrabold text-sm shadow-lg shadow-purple-500/30 transition">
+                    Следующий уровень <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           1. FULL 32-KEY RUSSIAN KEYBOARD & MULTILINGUAL SCRIPT MAPPING
+           ========================================================================== */
+        // Standard 32-letter Russian Alphabet (without Ё so shift calculations are 100% clean and contiguous)
+        const RUS_ALPHABET = [
+            'А','Б','В','Г','Д','Е','Ж','З','И','Й','К','Л','М','Н','О','П',
+            'Р','С','Т','У','Ф','Х','Ц','Ч','Ш','Щ','Ъ','Ы','Ь','Э','Ю','Я'
+        ];
+
+        // 32 Russian keys organized into 3 authentic ЙЦУКЕН rows.
+        // Every single key has a unique mapping for English (QWERTY), Korean (Hangul), Hebrew, and Arabic!
+        const KEYBOARD_ROWS = [
+            // Row 1: 12 keys
+            [
+                { ru: 'Й', code: 'KeyQ', en: 'Q', ko: 'ㅂ', koName: 'Пиып (b/p)', he: 'ק', heName: 'Куф', ar: 'ض', arName: 'Дад' },
+                { ru: 'Ц', code: 'KeyW', en: 'W', ko: 'ㅈ', koName: 'Чиыт (j)',   he: 'ר', heName: 'Рейш', ar: 'ص', arName: 'Сад' },
+                { ru: 'У', code: 'KeyE', en: 'E', ko: 'ㄷ', koName: 'Тигыт (d)',  he: 'א', heName: 'Алеф', ar: 'ث', arName: 'Са' },
+                { ru: 'К', code: 'KeyR', en: 'R', ko: 'ㄱ', koName: 'Киёк (g/k)', he: 'ט', heName: 'Тет',  ar: 'ق', arName: 'Каф' },
+                { ru: 'Е', code: 'KeyT', en: 'T', ko: 'ㅅ', koName: 'Сиот (s)',   he: 'ו', heName: 'Вав',  ar: 'ف', arName: 'Фа' },
+                { ru: 'Н', code: 'KeyY', en: 'Y', ko: 'ㅛ', koName: 'Йо (yo)',    he: 'ן', heName: 'Нун софит', ar: 'غ', arName: 'Гайн' },
+                { ru: 'Г', code: 'KeyU', en: 'U', ko: 'ㅕ', koName: 'Йо (yeo)',   he: 'ם', heName: 'Мем софит', ar: 'ع', arName: 'Айн' },
+                { ru: 'Ш', code: 'KeyI', en: 'I', ko: 'ㅑ', koName: 'Я (ya)',     he: 'פ', heName: 'Пей',  ar: 'ه', arName: 'Ха' },
+                { ru: 'Щ', code: 'KeyO', en: 'O', ko: 'ㅐ', koName: 'Э (ae)',     he: 'ש', heName: 'Шин',  ar: 'خ', arName: 'Ха' },
+                { ru: 'З', code: 'KeyP', en: 'P', ko: 'ㅔ', koName: 'Е (e)',      he: 'ד', heName: 'Далет', ar: 'ح', arName: 'Ха' },
+                { ru: 'Х', code: 'BracketLeft',  en: '[', ko: 'ㅃ', koName: 'Ссан-биып', he: 'ג', heName: 'Гимель', ar: 'ج', arName: 'Джим' },
+                { ru: 'Ъ', code: 'BracketRight', en: ']', ko: 'ㅉ', koName: 'Ссан-джиыт', he: 'כ', heName: 'Каф', ar: 'د', arName: 'Даль' }
+            ],
+            // Row 2: 11 keys
+            [
+                { ru: 'Ф', code: 'KeyA', en: 'A', ko: 'ㅁ', koName: 'Миым (m)',   he: 'ע', heName: 'Айн',   ar: 'ش', arName: 'Шин' },
+                { ru: 'Ы', code: 'KeyS', en: 'S', ko: 'ㄴ', koName: 'Ниын (n)',   he: 'י', heName: 'Йуд',   ar: 'س', arName: 'Син' },
+                { ru: 'В', code: 'KeyD', en: 'D', ko: 'ㅇ', koName: 'Иын (ng)',   he: 'ח', heName: 'Хет',   ar: 'ي', arName: 'Йа' },
+                { ru: 'А', code: 'KeyF', en: 'F', ko: 'ㄹ', koName: 'Риыль (r/l)',he: 'ל', heName: 'Ламед', ar: 'ب', arName: 'Ба' },
+                { ru: 'П', code: 'KeyG', en: 'G', ko: 'ㅎ', koName: 'Хиыт (h)',   he: 'ך', heName: 'Хаф софит', ar: 'ل', arName: 'Лям' },
+                { ru: 'Р', code: 'KeyH', en: 'H', ko: 'ㅗ', koName: 'О (o)',      he: 'ף', heName: 'Фей софит', ar: 'ا', arName: 'Алиф' },
+                { ru: 'О', code: 'KeyJ', en: 'J', ko: 'ㅓ', koName: 'О (eo)',     he: 'ז', heName: 'Заин',  ar: 'ت', arName: 'Та' },
+                { ru: 'Л', code: 'KeyK', en: 'K', ko: 'ㅏ', koName: 'А (a)',      he: 'ס', heName: 'Самех', ar: 'ن', arName: 'Нун' },
+                { ru: 'Д', code: 'KeyL', en: 'L', ko: 'ㅣ', koName: 'И (i)',      he: 'ב', heName: 'Бет',   ar: 'م', arName: 'Мим' },
+                { ru: 'Ж', code: 'Semicolon', en: ';', ko: 'ㄲ', koName: 'Ссан-гиёк', he: 'ה', heName: 'Хей', ar: 'ك', arName: 'Кяф' },
+                { ru: 'Э', code: 'Quote',     en: "'", ko: 'ㅆ', koName: 'Ссан-сиот', he: 'נ', heName: 'Нун', ar: 'ط', arName: 'Та' }
+            ],
+            // Row 3: 9 keys
+            [
+                { ru: 'Я', code: 'KeyZ', en: 'Z', ko: 'ㅋ', koName: 'Кхиык (k)',  he: 'מ', heName: 'Мем',  ar: 'ذ', arName: 'Заль' },
+                { ru: 'Ч', code: 'KeyX', en: 'X', ko: 'ㅌ', koName: 'Тхиыт (t)',  he: 'צ', heName: 'Цади', ar: 'ء', arName: 'Хамза' },
+                { ru: 'С', code: 'KeyC', en: 'C', ko: 'ㅊ', koName: 'Чхиыт (ch)', he: 'ת', heName: 'Тав',  ar: 'ظ', arName: 'За' },
+                { ru: 'М', code: 'KeyV', en: 'V', ko: 'ㅍ', koName: 'Пхиып (p)',  he: 'ץ', heName: 'Цади софит', ar: 'ر', arName: 'Ра' },
+                { ru: 'И', code: 'KeyB', en: 'B', ko: 'ㅠ', koName: 'Ю (yu)',     he: 'שׂ', heName: 'Син',  ar: 'لا', arName: 'Лям-Алиф' },
+                { ru: 'Т', code: 'KeyN', en: 'N', ko: 'ㅜ', koName: 'У (u)',      he: 'בּ', heName: 'Вет',  ar: 'ى', arName: 'Алиф максура' },
+                { ru: 'Ь', code: 'KeyM', en: 'M', ko: 'ㅡ', koName: 'Ы (eu)',     he: 'כּ', heName: 'Хаф',  ar: 'ة', arName: 'Та марбута' },
+                { ru: 'Б', code: 'Comma',  en: ',', ko: 'ㅒ', koName: 'Йэ (yae)', he: 'פּ', heName: 'Фей',  ar: 'و', arName: 'Вав' },
+                { ru: 'Ю', code: 'Period', en: '.', ko: 'ㅖ', koName: 'Йе (ye)',  he: 'תּ', heName: 'Тав дагеш', ar: 'ز', arName: 'Зай' }
+            ]
+        ];
+
+        // Build lookup maps for quick access
+        const KEY_BY_RU = {};
+        const KEY_BY_CODE = {};
+        KEYBOARD_ROWS.forEach((row, rIdx) => {
+            row.forEach((keyObj, cIdx) => {
+                keyObj.row = rIdx;
+                keyObj.col = cIdx;
+                KEY_BY_RU[keyObj.ru] = keyObj;
+                KEY_BY_CODE[keyObj.code] = keyObj;
+            });
+        });
+
+        /* ==========================================================================
+           2. 10 LEVELS CONFIGURATION & CURATED RUSSIAN WORD LISTS
+           ========================================================================== */
+        const LEVELS = [
+            {
+                id: 1,
+                name: 'Прямой контакт',
+                badge: 'Разминка • Прямой ввод',
+                shortTitle: '1. Прямой',
+                scriptMode: 'en',
+                showAlphaDefault: false,
+                description: 'Нажимай на клавиатуре ту же русскую букву, которая появляется на экране, чтобы собрать слово.',
+                words: [
+                    { word: 'КОСМОС', theme: 'Вселенная 🚀' },
+                    { word: 'ЗВЕЗДА', theme: 'Астрономия ✨' },
+                    { word: 'СИГНАЛ', theme: 'Связь 📡' },
+                    { word: 'ОРБИТА', theme: 'Космонавтика 🛰️' },
+                    { word: 'РАКЕТА', theme: 'Полёты 🔥' }
+                ]
+            },
+            {
+                id: 2,
+                name: 'Шаг в сторону',
+                badge: 'Шифр Цезаря • Сдвиг ±1',
+                shortTitle: '2. Сдвиг ±1',
+                scriptMode: 'en',
+                showAlphaDefault: true,
+                description: 'Буква на карточке сдвинута! Сдвинь её по русскому алфавиту на +1 ➡️ (следующая) или -1 ⬅️ (предыдущая), как указано под ней.',
+                words: [
+                    { word: 'ПАРОЛЬ', theme: 'Киберзащита 🔐' },
+                    { word: 'СЕКРЕТ', theme: 'Шпионаж 🕵️' },
+                    { word: 'ПОРТАЛ', theme: 'Фантастика 🌀' },
+                    { word: 'КРИСТАЛ', theme: 'Минералы 💎' },
+                    { word: 'МАГНИТ', theme: 'Физика 🧲' }
+                ]
+            },
+            {
+                id: 3,
+                name: 'Крипто-шторм',
+                badge: 'Шифр сдвига • ±1..4 по алфавиту',
+                shortTitle: '3. Сдвиг ±1..4',
+                scriptMode: 'en',
+                showAlphaDefault: true,
+                description: 'Случайный сдвиг от 1 до 4 букв влево или вправо по алфавиту! Используй шкалу алфавита под карточкой.',
+                words: [
+                    { word: 'МАТРИЦА', theme: 'Киберпанк 💻' },
+                    { word: 'СПУТНИК', theme: 'Космос 🛰️' },
+                    { word: 'ИМПУЛЬС', theme: 'Энергия ⚡' },
+                    { word: 'ГОРИЗОНТ', theme: 'География 🌅' },
+                    { word: 'КВАНТУМ', theme: 'Наука ⚛️' }
+                ]
+            },
+            {
+                id: 4,
+                name: 'Латинский мост',
+                badge: 'Латиница QWERTY → Русская ЙЦУКЕН',
+                shortTitle: '4. Латиница',
+                scriptMode: 'en',
+                showAlphaDefault: false,
+                description: 'На карточке показан английский символ клавиши (QWERTY). Нажми русскую букву, расположенную на этой же клавише!',
+                words: [
+                    { word: 'КЛАВИША', theme: 'Периферия ⌨️' },
+                    { word: 'СИСТЕМА', theme: 'Технологии 🖥️' },
+                    { word: 'ПРОЦЕСС', theme: 'Ядро ⚙️' },
+                    { word: 'ТЕРМИНАЛ', theme: 'Консоль 📟' },
+                    { word: 'БРАУЗЕР', theme: 'Интернет 🌐' }
+                ]
+            },
+            {
+                id: 5,
+                name: 'Сеульский экспресс',
+                badge: 'Корейский алфавит (Хангыль) 🇰🇷',
+                shortTitle: '5. Корейский',
+                scriptMode: 'ko',
+                showAlphaDefault: false,
+                description: 'На клавишах появился корейский Хангыль! Найди показанный корейский символ на клавиатуре и нажми эту клавишу.',
+                words: [
+                    { word: 'ВОСТОК', theme: 'Путешествия 🏮' },
+                    { word: 'ДРАКОН', theme: 'Легенды 🐉' },
+                    { word: 'ЦВЕТОК', theme: 'Природа 🌸' },
+                    { word: 'ОКЕАН', theme: 'Стихия 🌊' },
+                    { word: 'НЕОН', theme: 'Ночной Сеул 🌃' }
+                ]
+            },
+            {
+                id: 6,
+                name: 'Тайны Иерусалима',
+                badge: 'Алфавит Иврит 🇮🇱',
+                shortTitle: '6. Иврит',
+                scriptMode: 'he',
+                showAlphaDefault: false,
+                description: 'На клавиатуре появились буквы иврита! Сопоставь крупный символ с клавишей и собери русское слово.',
+                words: [
+                    { word: 'СВИТОК', theme: 'Древность 📜' },
+                    { word: 'ПУСТЫНЯ', theme: 'Природа 🏜️' },
+                    { word: 'ЛЕГЕНДА', theme: 'История 🏛️' },
+                    { word: 'КАМЕНЬ', theme: 'Артефакты 🪨' },
+                    { word: 'ВРЕМЯ', theme: 'Вечность ⏳' }
+                ]
+            },
+            {
+                id: 7,
+                name: 'Мираж Востока',
+                badge: 'Арабская вязь 🌙',
+                shortTitle: '7. Арабский',
+                scriptMode: 'ar',
+                showAlphaDefault: false,
+                description: 'Арабский алфавит на клавишах! Внимательно сравни очертания арабской буквы и нажми соответствующую русскую клавишу.',
+                words: [
+                    { word: 'КАРАВАН', theme: 'Восток 🐪' },
+                    { word: 'ОАЗИС', theme: 'Природа 🌴' },
+                    { word: 'АЛХИМИЯ', theme: 'Наука древних ⚗️' },
+                    { word: 'ЗЕФИР', theme: 'Ветра 🌬️' },
+                    { word: 'РУБИН', theme: 'Сокровища ♦️' }
+                ]
+            },
+            {
+                id: 8,
+                name: 'Соседи по ряду',
+                badge: 'Пространственный сдвиг по клавиатуре ⌨️',
+                shortTitle: '8. Соседи',
+                scriptMode: 'en',
+                showAlphaDefault: false,
+                description: 'Показана соседняя клавиша! Найди показанную букву на клавиатуре и нажми клавишу СЛЕВА ⬅️ или СПРАВА ➡️ от неё в том же ряду.',
+                words: [
+                    { word: 'РАДАР', theme: 'Навигация 🧭' },
+                    { word: 'ШТОРМ', theme: 'Стихия ⛈️' },
+                    { word: 'ЛИДЕР', theme: 'Успех 🏆' },
+                    { word: 'ФОТОН', theme: 'Оптика 💡' },
+                    { word: 'БАЛАНС', theme: 'Гармония ⚖️' }
+                ]
+            },
+            {
+                id: 9,
+                name: 'Двойной агент',
+                badge: 'Комбо: Латиница QWERTY + Сдвиг ±1',
+                shortTitle: '9. Комбо QWERTY±1',
+                scriptMode: 'en',
+                showAlphaDefault: true,
+                description: 'Двойная задача: 1) Найди русскую букву на указанной английской клавише, 2) Сдвинь эту русскую букву по алфавиту на +1 ➡️ или -1 ⬅️!',
+                words: [
+                    { word: 'ШИФРОВКА', theme: 'Спецоперация 🕵️‍♂️' },
+                    { word: 'ДЕКОДЕР', theme: 'Криптография 🔓' },
+                    { word: 'АГЕНТУРА', theme: 'Разведка 🕶️' },
+                    { word: 'ПРОТОКОЛ', theme: 'Безопасность 🛡️' },
+                    { word: 'ЦИТАДЕЛЬ', theme: 'Крепость 🏰' }
+                ]
+            },
+            {
+                id: 10,
+                name: 'Матрица Энигмы',
+                badge: 'Гранд-финал • Смена шифра на каждой букве!',
+                shortTitle: '10. Энигма',
+                scriptMode: 'dynamic',
+                showAlphaDefault: true,
+                description: 'Финальное испытание! Каждая буква слова зашифрована своим методом (Сдвиг, Латиница, Корейский, Иврит, Арабский или Сосед по клавиатуре).',
+                words: [
+                    { word: 'ЭНИГМА', theme: 'Легендарный шифр 🏆' },
+                    { word: 'ТРИУМФ', theme: 'Победа 👑' },
+                    { word: 'ФЕНОМЕН', theme: 'Мастерство 🌟' },
+                    { word: 'АБСОЛЮТ', theme: 'Вершина ⚡' },
+                    { word: 'СИНТЕЗ', theme: 'Будущее 🧬' }
+                ]
+            }
+        ];
+
+        /* ==========================================================================
+           3. WEB AUDIO API SYNTHESIZER (MECHANICAL KEY CLICKS & GAME CHIMES)
+           ========================================================================== */
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            const ctx = getAudioContext();
+            if (!ctx) return;
+
+            const now = ctx.currentTime;
+
+            if (type === 'correct') {
+                // Crisp mechanical switch thock + bright harmonic chime
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                const baseFreq = 440 + Math.min(state.combo * 28, 360);
+                osc.frequency.setValueAtTime(baseFreq, now);
+                osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.45, now + 0.14);
+
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.16);
+            } else if (type === 'wrong') {
+                // Soft low buzz
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(155, now);
+                osc.frequency.linearRampToValueAtTime(115, now + 0.22);
+
+                gain.gain.setValueAtTime(0.14, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.24);
+            } else if (type === 'wordComplete') {
+                // Arpeggio fanfare
+                const notes = [523.25, 659.25, 783.99, 1046.5];
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.065);
+                    gain.gain.setValueAtTime(0.16, now + idx * 0.065);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.065 + 0.28);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + idx * 0.065);
+                    osc.stop(now + idx * 0.065 + 0.28);
+                });
+            } else if (type === 'hint') {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(680, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.18);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+        }
+
+        /* ==========================================================================
+           4. GAME STATE & CIPHER CHALLENGE GENERATOR
+           ========================================================================== */
+        const state = {
+            currentLevelIndex: 0, // 0..9 (corresponds to Level 1..10)
+            wordsCompletedInLevel: 0,
+            wordsTargetPerLevel: 3,
+            wordPoolIndex: 0,
+            currentWordObj: null,
+            currentLetterIndex: 0,
+            currentChallenge: null, // Holds { targetRu, displaySymbol, mode, shift, sourceRu, instructionHtml, subtext, scriptTag, phoneticTag }
+            score: 0,
+            combo: 1,
+            maxCombo: 1,
+            hintActive: false,
+            showAlphabet: false,
+            expertHideRussian: false,
+            completedLevels: new Set(),
+            isTransitioning: false
+        };
+
+        // Helper: modulo arithmetic for 32-letter Russian alphabet
+        function shiftRussianLetter(letter, offset) {
+            const idx = RUS_ALPHABET.indexOf(letter);
+            if (idx === -1) return letter;
+            const newIdx = (idx + offset + RUS_ALPHABET.length * 10) % RUS_ALPHABET.length;
+            return RUS_ALPHABET[newIdx];
+        }
+
+        // Generates the cipher challenge for a specific target Russian letter according to level rules
+        function createChallengeForLetter(targetRu, levelNum) {
+            const keyInfo = KEY_BY_RU[targetRu];
+
+            // For Level 10 (Enigma Matrix), pick a random sub-mode from Levels 2..9
+            let effectiveMode = levelNum;
+            if (levelNum === 10) {
+                const modes = [2, 3, 4, 5, 6, 7, 8, 9];
+                effectiveMode = modes[Math.floor(Math.random() * modes.length)];
+            }
+
+            // Build challenge object based on effectiveMode
+            switch (effectiveMode) {
+                case 1: {
+                    // Direct Russian letter
+                    return {
+                        targetRu,
+                        displaySymbol: targetRu,
+                        scriptMode: 'en',
+                        sourceRuOnAlpha: targetRu,
+                        referenceKeyRu: null,
+                        scriptTag: 'Русский алфавит • Прямой ввод',
+                        phoneticTag: null,
+                        badgeClass: 'from-indigo-600/90 to-cyan-600/90',
+                        instructionHtml: `<i class="fa-solid fa-bullseye"></i> <span>Нажми букву «${targetRu}»</span>`,
+                        subtext: 'Уровень 1: нажимай показанную букву напрямую, чтобы собрать слово вверху'
+                    };
+                }
+
+                case 2: {
+                    // Alphabet shift by +1 or -1
+                    // playerShift is what the player MUST do to the displayed letter to reach targetRu
+                    const playerShift = Math.random() < 0.5 ? 1 : -1;
+                    const shownRu = shiftRussianLetter(targetRu, -playerShift);
+                    const dirArrow = playerShift > 0 ? '+1 ➡️ (следующая по алфавиту)' : '-1 ⬅️ (предыдущая по алфавиту)';
+                    return {
+                        targetRu,
+                        displaySymbol: shownRu,
+                        scriptMode: 'en',
+                        sourceRuOnAlpha: shownRu,
+                        referenceKeyRu: null,
+                        scriptTag: 'Шифр сдвига • ±1 по алфавиту',
+                        phoneticTag: `Показана: ${shownRu}`,
+                        badgeClass: playerShift > 0 ? 'from-emerald-600/90 to-teal-600/90' : 'from-amber-600/90 to-orange-600/90',
+                        instructionHtml: `<span>Сдвиг по алфавиту: <strong>${dirArrow}</strong></span>`,
+                        subtext: `Найди букву «${shownRu}» на шкале алфавита ниже и шагни на ${playerShift > 0 ? '1 букву ВПРАВО ➡️' : '1 букву ВЛЕВО ⬅️'}`
+                    };
+                }
+
+                case 3: {
+                    // Random alphabet shift ±1..4
+                    const offsets = [-4, -3, -2, -1, 1, 2, 3, 4];
+                    const playerShift = offsets[Math.floor(Math.random() * offsets.length)];
+                    const shownRu = shiftRussianLetter(targetRu, -playerShift);
+                    const signStr = playerShift > 0 ? `+${playerShift} ➡️ ВПРАВО` : `${playerShift} ⬅️ ВЛЕВО`;
+                    return {
+                        targetRu,
+                        displaySymbol: shownRu,
+                        scriptMode: 'en',
+                        sourceRuOnAlpha: shownRu,
+                        referenceKeyRu: null,
+                        scriptTag: 'Крипто-шторм • Сдвиг по алфавиту',
+                        phoneticTag: `Отсчитай от «${shownRu}»`,
+                        badgeClass: playerShift > 0 ? 'from-cyan-600/90 to-blue-600/90' : 'from-fuchsia-600/90 to-pink-600/90',
+                        instructionHtml: `<span>Сдвиг по алфавиту: <strong>${signStr}</strong></span>`,
+                        subtext: `Буква «${shownRu}» подсвечена голубым на шкале алфавита — отсчитай ${Math.abs(playerShift)} ${Math.abs(playerShift) === 1 ? 'шаг' : 'шага'} ${playerShift > 0 ? 'вправо ➡️' : 'влево ⬅️'}`
+                    };
+                }
+
+                case 4: {
+                    // Latin QWERTY keycap -> press Russian
+                    return {
+                        targetRu,
+                        displaySymbol: keyInfo.en,
+                        scriptMode: 'en',
+                        sourceRuOnAlpha: null,
+                        referenceKeyRu: null,
+                        scriptTag: 'Латиница (QWERTY) → Русская раскладка',
+                        phoneticTag: `Клавиша [${keyInfo.en}]`,
+                        badgeClass: 'from-violet-600/90 to-indigo-600/90',
+                        instructionHtml: `<i class="fa-solid fa-language"></i> <span>Английская клавиша «${keyInfo.en}» → нажми русскую букву</span>`,
+                        subtext: 'Посмотри на угловые латинские подписи на клавишах или используй мышечную память'
+                    };
+                }
+
+                case 5: {
+                    // Korean Hangul -> press Russian
+                    return {
+                        targetRu,
+                        displaySymbol: keyInfo.ko,
+                        scriptMode: 'ko',
+                        sourceRuOnAlpha: null,
+                        referenceKeyRu: null,
+                        scriptTag: 'Корейский Хангыль 🇰🇷',
+                        phoneticTag: `Чтение: ${keyInfo.koName}`,
+                        badgeClass: 'from-pink-600/90 to-rose-600/90',
+                        instructionHtml: `<i class="fa-solid fa-earth-asia"></i> <span>Найди корейский символ «${keyInfo.ko}» на клавиатуре</span>`,
+                        subtext: 'Символы Хангыля подписаны в верхнем углу каждой клавиши'
+                    };
+                }
+
+                case 6: {
+                    // Hebrew -> press Russian
+                    return {
+                        targetRu,
+                        displaySymbol: keyInfo.he,
+                        scriptMode: 'he',
+                        sourceRuOnAlpha: null,
+                        referenceKeyRu: null,
+                        scriptTag: 'Алфавит Иврит 🇮🇱',
+                        phoneticTag: `Буква: ${keyInfo.heName}`,
+                        badgeClass: 'from-sky-600/90 to-indigo-600/90',
+                        instructionHtml: `<i class="fa-solid fa-scroll"></i> <span>Найди букву иврита «${keyInfo.he}» на клавиатуре</span>`,
+                        subtext: 'Сопоставь форму символа с подписями на клавишах внизу'
+                    };
+                }
+
+                case 7: {
+                    // Arabic -> press Russian
+                    return {
+                        targetRu,
+                        displaySymbol: keyInfo.ar,
+                        scriptMode: 'ar',
+                        sourceRuOnAlpha: null,
+                        referenceKeyRu: null,
+                        scriptTag: 'Арабский алфавит 🌙',
+                        phoneticTag: `Буква: ${keyInfo.arName}`,
+                        badgeClass: 'from-emerald-600/90 to-teal-700/90',
+                        instructionHtml: `<i class="fa-solid fa-moon"></i> <span>Найди арабскую букву «${keyInfo.ar}» на клавиатуре</span>`,
+                        subtext: 'Обрати внимание на точки и изгибы арабской буквы на клавишах'
+                    };
+                }
+
+                case 8: {
+                    // Keyboard Row Neighbor (Left or Right on the physical keyboard row)
+                    const rowArr = KEYBOARD_ROWS[keyInfo.row];
+                    const possibleDirs = [];
+                    if (keyInfo.col > 0) possibleDirs.push(1); // Show left key (col-1), player presses RIGHT (+1)
+                    if (keyInfo.col < rowArr.length - 1) possibleDirs.push(-1); // Show right key (col+1), player presses LEFT (-1)
+
+                    const pressDir = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
+                    const shownKeyObj = rowArr[keyInfo.col - pressDir];
+                    const dirText = pressDir === 1
+                        ? '➡️ Нажми клавишу СПРАВА от неё'
+                        : '⬅️ Нажми клавишу СЛЕВА от неё';
+
+                    return {
+                        targetRu,
+                        displaySymbol: shownKeyObj.ru,
+                        scriptMode: 'en',
+                        sourceRuOnAlpha: null,
+                        referenceKeyRu: shownKeyObj.ru,
+                        scriptTag: 'Соседи по клавиатуре ⌨️',
+                        phoneticTag: `Ориентир на клавиатуре: «${shownKeyObj.ru}»`,
+                        badgeClass: 'from-amber-500/90 to-orange-600/90',
+                        instructionHtml: `<span>Найди «${shownKeyObj.ru}» на клавиатуре и <strong>${dirText}</strong></span>`,
+                        subtext: `Ориентир «${shownKeyObj.ru}» подсвечен голубой рамкой прямо на клавиатуре — нажми соседнюю клавишу в том же ряду!`
+                    };
+                }
+
+                case 9: {
+                    // Double Agent: Show Latin QWERTY key of a shifted Russian letter (±1 in alphabet)
+                    const playerShift = Math.random() < 0.5 ? 1 : -1;
+                    const baseRu = shiftRussianLetter(targetRu, -playerShift);
+                    const baseKeyInfo = KEY_BY_RU[baseRu];
+                    const shiftLabel = playerShift > 0 ? '+1 ➡️ по алфавиту' : '-1 ⬅️ по алфавиту';
+
+                    return {
+                        targetRu,
+                        displaySymbol: baseKeyInfo.en,
+                        scriptMode: 'en',
+                        sourceRuOnAlpha: baseRu,
+                        referenceKeyRu: null,
+                        scriptTag: 'Двойной агент • Латиница + Сдвиг ±1',
+                        phoneticTag: `Шаг 1: клавиша [${baseKeyInfo.en}] → Шаг 2: ${shiftLabel}`,
+                        badgeClass: 'from-fuchsia-600/90 via-purple-600/90 to-indigo-600/90',
+                        instructionHtml: `<span>Клавиша <strong>[${baseKeyInfo.en}]</strong>, затем сдвиг <strong>${shiftLabel}</strong></span>`,
+                        subtext: `Найди русскую букву на клавише [${baseKeyInfo.en}] и сдвинь её по русскому алфавиту на ${playerShift > 0 ? '+1 вправо ➡️' : '-1 влево ⬅️'}`
+                    };
+                }
+            }
+        }
+
+        /* ==========================================================================
+           5. UI RENDERING & UPDATES
+           ========================================================================== */
+
+        // Render the 10-level selector bar at the top
+        function renderLevelSelector() {
+            const container = document.getElementById('level-buttons-container');
+            container.innerHTML = '';
+
+            LEVELS.forEach((lvl, idx) => {
+                const isActive = idx === state.currentLevelIndex;
+                const isDone = state.completedLevels.has(lvl.id);
+
+                const btn = document.createElement('button');
+                btn.onclick = () => selectLevel(idx);
+                btn.className = `px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 border ${
+                    isActive
+                        ? 'bg-gradient-to-r from-fuchsia-500 via-purple-600 to-cyan-500 text-white border-white/40 shadow-lg shadow-purple-500/30 scale-[1.03]'
+                        : isDone
+                            ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 border-emerald-500/30'
+                            : 'bg-slate-900/60 hover:bg-slate-800/80 text-slate-300 border-white/10'
+                }`;
+
+                btn.innerHTML = `
+                    <span class="w-4 h-4 rounded-full text-[10px] flex items-center justify-center ${
+                        isActive ? 'bg-white/25 text-white' : isDone ? 'bg-emerald-500 text-slate-950' : 'bg-white/10 text-slate-300'
+                    }">
+                        ${isDone ? '<i class="fa-solid fa-check"></i>' : lvl.id}
+                    </span>
+                    <span>${lvl.shortTitle.split('. ')[1]}</span>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        // Render the 32-letter Russian Alphabet Strip
+        function renderAlphabetStrip() {
+            const stripSection = document.getElementById('alphabet-strip-section');
+            const cellsContainer = document.getElementById('alphabet-strip-cells');
+
+            if (!state.showAlphabet) {
+                stripSection.classList.add('hidden');
+                return;
+            }
+            stripSection.classList.remove('hidden');
+            cellsContainer.innerHTML = '';
+
+            const sourceRu = state.currentChallenge ? state.currentChallenge.sourceRuOnAlpha : null;
+            const targetRu = state.currentChallenge ? state.currentChallenge.targetRu : null;
+
+            RUS_ALPHABET.forEach((letter, idx) => {
+                const cell = document.createElement('div');
+                const isSource = sourceRu === letter;
+                const isTargetHint = state.hintActive && targetRu === letter;
+
+                cell.className = `alpha-cell w-6 h-7 sm:w-7 sm:h-8 rounded-lg border text-xs sm:text-sm font-extrabold flex flex-col items-center justify-center mono-font ${
+                    isTargetHint
+                        ? 'alpha-target-hint'
+                        : isSource
+                            ? 'alpha-source'
+                            : 'bg-slate-900/75 border-white/10 text-slate-300'
+                }`;
+                cell.innerHTML = `
+                    <span>${letter}</span>
+                    <span class="text-[8px] font-normal opacity-50 leading-none">${idx + 1}</span>
+                `;
+                cellsContainer.appendChild(cell);
+            });
+        }
+
+        // Render the Word Slots at the top
+        function renderWordSlots() {
+            const container = document.getElementById('word-slots-container');
+            container.innerHTML = '';
+
+            const wordStr = state.currentWordObj.word;
+            for (let i = 0; i < wordStr.length; i++) {
+                const char = wordStr[i];
+                const isCompleted = i < state.currentLetterIndex;
+                const isCurrent = i === state.currentLetterIndex;
+
+                const slot = document.createElement('div');
+                slot.className = `w-11 h-12 sm:w-14 sm:h-16 rounded-2xl border-2 flex items-center justify-center text-2xl sm:text-3xl font-black mono-font transition-all ${
+                    isCompleted
+                        ? 'bg-gradient-to-b from-emerald-500/30 to-teal-600/40 border-emerald-400 text-white shadow-lg shadow-emerald-500/20 animate-pop'
+                        : isCurrent
+                            ? 'bg-slate-900/90 slot-active text-cyan-300'
+                            : 'bg-slate-900/45 border-white/15 text-slate-600'
+                }`;
+
+                slot.textContent = isCompleted ? char : isCurrent ? '?' : '•';
+                container.appendChild(slot);
+            }
+
+            document.getElementById('word-theme-badge').textContent = `Тема: ${state.currentWordObj.theme}`;
+            const currentLvl = LEVELS[state.currentLevelIndex];
+            document.getElementById('level-mechanic-pill').textContent = currentLvl.badge;
+        }
+
+        // Render the Central Stimulus Card
+        function renderStimulusCard() {
+            const ch = state.currentChallenge;
+            if (!ch) return;
+
+            const symbolEl = document.getElementById('stimulus-symbol');
+            symbolEl.textContent = ch.displaySymbol;
+
+            // Retrigger pop animation on symbol change
+            symbolEl.classList.remove('animate-pop');
+            void symbolEl.offsetWidth;
+            symbolEl.classList.add('animate-pop');
+
+            document.getElementById('stimulus-script-badge').textContent = ch.scriptTag;
+
+            const phoneticEl = document.getElementById('stimulus-phonetic-badge');
+            if (ch.phoneticTag) {
+                phoneticEl.textContent = ch.phoneticTag;
+                phoneticEl.classList.remove('hidden');
+            } else {
+                phoneticEl.classList.add('hidden');
+            }
+
+            const badgeEl = document.getElementById('instruction-badge');
+            badgeEl.className = `px-4 py-1.5 rounded-2xl font-extrabold text-sm sm:text-base flex items-center gap-2 shadow-lg bg-gradient-to-r ${ch.badgeClass} border border-white/25 text-white`;
+            badgeEl.innerHTML = ch.instructionHtml;
+
+            document.getElementById('instruction-subtext').textContent = ch.subtext;
+        }
+
+        // Render the 3-Row On-Screen Keyboard
+        function renderKeyboard() {
+            const rowsContainer = document.getElementById('keyboard-rows');
+            rowsContainer.innerHTML = '';
+
+            const activeScript = state.currentChallenge ? state.currentChallenge.scriptMode : LEVELS[state.currentLevelIndex].scriptMode;
+            const scriptNames = {
+                en: 'ЙЦУКЕН + Английская (QWERTY)',
+                ko: 'ЙЦУКЕН + Корейский (Хангыль 🇰🇷)',
+                he: 'ЙЦУКЕН + Иврит (🇮🇱)',
+                ar: 'ЙЦУКЕН + Арабская вязь (🌙)'
+            };
+            document.getElementById('keyboard-layout-indicator').textContent = `Раскладка: ${scriptNames[activeScript] || scriptNames.en}`;
+
+            KEYBOARD_ROWS.forEach((rowKeys, rIdx) => {
+                const rowDiv = document.createElement('div');
+                // Slight horizontal indentation for authentic staggered mechanical keyboard feel
+                const rowPadding = rIdx === 1 ? 'px-2 sm:px-6' : rIdx === 2 ? 'px-6 sm:px-14' : '';
+                rowDiv.className = `grid gap-1 sm:gap-2 ${rowPadding}`;
+                rowDiv.style.gridTemplateColumns = `repeat(${rowKeys.length}, minmax(0, 1fr))`;
+
+                rowKeys.forEach(k => {
+                    const secSymbol = k[activeScript] || k.en;
+                    const isHintTarget = state.hintActive && state.currentChallenge && state.currentChallenge.targetRu === k.ru;
+                    const isRefKey = state.currentChallenge && state.currentChallenge.referenceKeyRu === k.ru;
+
+                    const btn = document.createElement('button');
+                    btn.id = `keycap-${k.ru}`;
+                    btn.type = 'button';
+                    btn.onclick = () => handleKeyInput(k.ru);
+                    btn.className = `keycap h-12 sm:h-14 md:h-16 flex flex-col justify-between p-1.5 sm:p-2 select-none ${
+                        isHintTarget ? 'key-hint' : isRefKey ? 'key-reference' : ''
+                    }`;
+
+                    // Secondary script badge in top-left, Russian letter in center/bottom-right
+                    const secondaryColorClass =
+                        activeScript === 'ko' ? 'text-pink-300 font-bold text-xs sm:text-sm' :
+                        activeScript === 'he' ? 'text-sky-300 font-bold text-xs sm:text-sm' :
+                        activeScript === 'ar' ? 'text-emerald-300 font-bold text-xs sm:text-sm' :
+                        'text-cyan-300/90 font-semibold text-[10px] sm:text-xs';
+
+                    btn.innerHTML = `
+                        <div class="w-full flex items-center justify-between leading-none">
+                            <span class="${secondaryColorClass} mono-font">${secSymbol}</span>
+                            ${isRefKey ? '<span class="text-[9px] px-1 rounded bg-sky-500/30 text-sky-200">ориентир</span>' : ''}
+                        </div>
+                        <div class="w-full text-right leading-none">
+                            <span class="text-base sm:text-xl md:text-2xl font-black tracking-tight ${
+                                state.expertHideRussian ? 'opacity-10 blur-[3px]' : 'text-white'
+                            }">${k.ru}</span>
+                        </div>
+                    `;
+                    rowDiv.appendChild(btn);
+                });
+
+                rowsContainer.appendChild(rowDiv);
+            });
+        }
+
+        // Update Top Bar Status Numbers
+        function updateStatsBar() {
+            const lvl = LEVELS[state.currentLevelIndex];
+            document.getElementById('header-level-subtitle').textContent = `Уровень ${lvl.id}: «${lvl.name}» — ${lvl.badge}`;
+            document.getElementById('stat-word-progress').textContent = `${state.wordsCompletedInLevel + 1} / ${state.wordsTargetPerLevel}`;
+            document.getElementById('stat-combo').textContent = `x${state.combo}`;
+            document.getElementById('stat-score').textContent = state.score;
+        }
+
+        /* ==========================================================================
+           6. GAMEPLAY FLOW & INPUT HANDLING
+           ========================================================================== */
+
+        function selectLevel(levelIdx) {
+            state.currentLevelIndex = levelIdx;
+            state.wordsCompletedInLevel = 0;
+            state.wordPoolIndex = 0;
+            state.hintActive = false;
+
+            const lvl = LEVELS[levelIdx];
+            state.showAlphabet = lvl.showAlphaDefault;
+            updateAlphaToggleButton();
+
+            renderLevelSelector();
+            startNewWord();
+        }
+
+        function startNewWord() {
+            const lvl = LEVELS[state.currentLevelIndex];
+            const wordObj = lvl.words[state.wordPoolIndex % lvl.words.length];
+            state.wordPoolIndex++;
+
+            state.currentWordObj = wordObj;
+            state.currentLetterIndex = 0;
+            state.hintActive = false;
+
+            prepareCurrentLetterChallenge();
+            updateStatsBar();
+        }
+
+        function prepareCurrentLetterChallenge() {
+            const lvl = LEVELS[state.currentLevelIndex];
+            const targetRu = state.currentWordObj.word[state.currentLetterIndex];
+            state.currentChallenge = createChallengeForLetter(targetRu, lvl.id);
+            state.hintActive = false;
+
+            renderWordSlots();
+            renderStimulusCard();
+            renderAlphabetStrip();
+            renderKeyboard();
+        }
+
+        function handleKeyInput(pressedRu) {
+            if (state.isTransitioning || !state.currentChallenge) return;
+
+            const expectedRu = state.currentChallenge.targetRu;
+            const keyEl = document.getElementById(`keycap-${pressedRu}`);
+
+            if (pressedRu === expectedRu) {
+                // Correct key pressed!
+                playSound('correct');
+
+                if (keyEl) {
+                    keyEl.classList.add('key-correct');
+                    setTimeout(() => keyEl.classList.remove('key-correct'), 260);
+                }
+
+                // Award points
+                const basePoints = 100 + state.currentLevelIndex * 25;
+                const earned = state.hintActive ? Math.floor(basePoints / 2) : basePoints * state.combo;
+                state.score += earned;
+                if (!state.hintActive) {
+                    state.combo = Math.min(state.combo + 1, 10);
+                    state.maxCombo = Math.max(state.maxCombo, state.combo);
+                }
+
+                state.currentLetterIndex++;
+                updateStatsBar();
+
+                // Check if whole word is complete
+                if (state.currentLetterIndex >= state.currentWordObj.word.length) {
+                    state.isTransitioning = true;
+                    renderWordSlots();
+                    playSound('wordComplete');
+
+                    setTimeout(() => {
+                        state.isTransitioning = false;
+                        state.wordsCompletedInLevel++;
+
+                        if (state.wordsCompletedInLevel >= state.wordsTargetPerLevel) {
+                            const currentLvl = LEVELS[state.currentLevelIndex];
+                            state.completedLevels.add(currentLvl.id);
+                            renderLevelSelector();
+                            openLevelCompleteModal();
+                        } else {
+                            startNewWord();
+                        }
+                    }, 850);
+                } else {
+                    prepareCurrentLetterChallenge();
+                }
+            } else {
+                // Wrong key pressed
+                playSound('wrong');
+                state.combo = 1;
+                updateStatsBar();
+
+                if (keyEl) {
+                    keyEl.classList.add('key-wrong');
+                    setTimeout(() => keyEl.classList.remove('key-wrong'), 360);
+                }
+
+                const card = document.getElementById('stimulus-card');
+                card.classList.remove('card-shake');
+                void card.offsetWidth;
+                card.classList.add('card-shake');
+            }
+        }
+
+        // Physical Keyboard Listener (supports both Russian characters AND physical key codes in English layout!)
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+            // Ignore if modal is open and user presses Enter/Escape
+            const modal = document.getElementById('level-modal');
+            if (!modal.classList.contains('hidden')) {
+                if (e.key === 'Enter') goToNextLevel();
+                return;
+            }
+
+            // 1. Check direct Russian character match
+            const upperKey = e.key ? e.key.toUpperCase() : '';
+            const normalizedRu = upperKey === 'Ё' ? 'Е' : upperKey;
+            if (KEY_BY_RU[normalizedRu]) {
+                e.preventDefault();
+                handleKeyInput(normalizedRu);
+                return;
+            }
+
+            // 2. Fallback to physical hardware key code (e.g. KeyQ -> Й, KeyF -> А, Semicolon -> Ж)
+            if (KEY_BY_CODE[e.code]) {
+                e.preventDefault();
+                handleKeyInput(KEY_BY_CODE[e.code].ru);
+            }
+        });
+
+        /* ==========================================================================
+           7. HELPER CONTROLS & MODALS
+           ========================================================================== */
+
+        function triggerHint() {
+            if (!state.currentChallenge) return;
+            state.hintActive = true;
+            playSound('hint');
+            renderAlphabetStrip();
+            renderKeyboard();
+        }
+
+        function toggleAlphabetBar() {
+            state.showAlphabet = !state.showAlphabet;
+            updateAlphaToggleButton();
+            renderAlphabetStrip();
+        }
+
+        function updateAlphaToggleButton() {
+            const btn = document.getElementById('btn-toggle-alpha');
+            if (state.showAlphabet) {
+                btn.className = 'px-2.5 py-1.5 rounded-xl bg-cyan-500/25 border border-cyan-400/50 text-cyan-200 text-xs font-bold flex items-center gap-1.5 transition active:scale-95';
+            } else {
+                btn.className = 'px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-white/15 text-slate-300 text-xs font-bold flex items-center gap-1.5 transition active:scale-95';
+            }
+        }
+
+        function toggleExpertMode() {
+            state.expertHideRussian = !state.expertHideRussian;
+            const label = document.getElementById('expert-label');
+            const icon = document.getElementById('expert-icon');
+            const btn = document.getElementById('btn-expert-mode');
+
+            if (state.expertHideRussian) {
+                label.textContent = 'РУС: СКРЫТ';
+                icon.className = 'fa-solid fa-eye-slash text-fuchsia-300';
+                btn.classList.add('border-fuchsia-400/50', 'bg-fuchsia-500/20');
+            } else {
+                label.textContent = 'РУС: ВКЛ';
+                icon.className = 'fa-solid fa-eye';
+                btn.classList.remove('border-fuchsia-400/50', 'bg-fuchsia-500/20');
+            }
+            renderKeyboard();
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            const btn = document.getElementById('btn-sound');
+            if (soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high text-xs';
+                btn.classList.replace('text-slate-400', 'text-emerald-300');
+                playSound('correct');
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-xs';
+                btn.classList.replace('text-emerald-300', 'text-slate-400');
+            }
+        }
+
+        function skipCurrentWord() {
+            if (state.isTransitioning) return;
+            startNewWord();
+        }
+
+        function openLevelCompleteModal() {
+            const lvl = LEVELS[state.currentLevelIndex];
+            const modal = document.getElementById('level-modal');
+            document.getElementById('modal-badge').textContent = `Уровень ${lvl.id} пройден!`;
+            document.getElementById('modal-title').textContent = `«${lvl.name}» покорился!`;
+            document.getElementById('modal-desc').textContent =
+                state.currentLevelIndex < LEVELS.length - 1
+                    ? `Готов перейти на Уровень ${lvl.id + 1}: «${LEVELS[state.currentLevelIndex + 1].name}»?`
+                    : 'Поздравляем! Ты прошёл все 10 уровней Клавиатурного Дешифратора!';
+            document.getElementById('modal-score').textContent = state.score;
+            document.getElementById('modal-combo').textContent = `x${state.maxCombo}`;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeLevelModal() {
+            const modal = document.getElementById('level-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function stayOnCurrentLevel() {
+            closeLevelModal();
+            state.wordsCompletedInLevel = 0;
+            startNewWord();
+        }
+
+        function goToNextLevel() {
+            closeLevelModal();
+            const nextIdx = (state.currentLevelIndex + 1) % LEVELS.length;
+            selectLevel(nextIdx);
+        }
+
+        // Initialize Game on Window Load
+        window.onload = function () {
+            selectLevel(0);
+        };
+    </script>
+</body>
+</html>
