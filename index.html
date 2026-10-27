@@ -85,22 +85,9 @@
                         border-color 0.15s ease,
                         background 0.15s ease,
                         box-shadow 0.15s ease;
-            cursor: pointer;
+            pointer-events: none;
+            cursor: default;
             overflow: hidden;
-        }
-
-        .keycap:hover {
-            background: linear-gradient(180deg, rgba(64, 52, 115, 0.98) 0%, rgba(39, 31, 77, 1) 100%);
-            border-color: rgba(56, 189, 248, 0.6);
-            transform: translateY(-1px);
-            box-shadow: 
-                0 6px 15px rgba(56, 189, 248, 0.2),
-                inset 0 1px 2px rgba(255, 255, 255, 0.25);
-        }
-
-        .keycap:active, .keycap.key-pressed {
-            transform: translateY(3px);
-            border-bottom-width: 1px;
         }
 
         /* Keycap Feedback States */
@@ -397,7 +384,7 @@
             <div class="flex flex-wrap items-center justify-between gap-2 mb-2 px-1 text-xs text-slate-400">
                 <div class="flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>Работает клик мышью, тач-экран и <strong class="text-slate-200">физическая клавиатура</strong> (в любой раскладке RU/EN)</span>
+                    <span>Экранная клавиатура работает как табло — ввод <strong class="text-slate-200">только с физической клавиатуры</strong> (в любой раскладке RU/EN)</span>
                 </div>
                 <div id="keyboard-layout-indicator" class="font-semibold text-cyan-300">
                     Раскладка клавиш: ЙЦУКЕН + QWERTY
@@ -525,12 +512,13 @@
         const LEVELS = [
             {
                 id: 1,
+                mechanic: 'direct',
                 name: 'Прямой контакт',
                 badge: 'Разминка • Прямой ввод',
                 shortTitle: '1. Прямой',
                 scriptMode: 'en',
                 showAlphaDefault: false,
-                description: 'Нажимай на клавиатуре ту же русскую букву, которая появляется на экране, чтобы собрать слово.',
+                description: 'Нажимай на физической клавиатуре ту же русскую букву, которая появляется на экране, чтобы собрать слово.',
                 words: [
                     { word: 'КОСМОС', theme: 'Вселенная 🚀' },
                     { word: 'ЗВЕЗДА', theme: 'Астрономия ✨' },
@@ -541,105 +529,10 @@
             },
             {
                 id: 2,
-                name: 'Шаг в сторону',
-                badge: 'Шифр Цезаря • Сдвиг ±1',
-                shortTitle: '2. Сдвиг ±1',
-                scriptMode: 'en',
-                showAlphaDefault: true,
-                description: 'Буква на карточке сдвинута! Сдвинь её по русскому алфавиту на +1 ➡️ (следующая) или -1 ⬅️ (предыдущая), как указано под ней.',
-                words: [
-                    { word: 'ПАРОЛЬ', theme: 'Киберзащита 🔐' },
-                    { word: 'СЕКРЕТ', theme: 'Шпионаж 🕵️' },
-                    { word: 'ПОРТАЛ', theme: 'Фантастика 🌀' },
-                    { word: 'КРИСТАЛ', theme: 'Минералы 💎' },
-                    { word: 'МАГНИТ', theme: 'Физика 🧲' }
-                ]
-            },
-            {
-                id: 3,
-                name: 'Крипто-шторм',
-                badge: 'Шифр сдвига • ±1..4 по алфавиту',
-                shortTitle: '3. Сдвиг ±1..4',
-                scriptMode: 'en',
-                showAlphaDefault: true,
-                description: 'Случайный сдвиг от 1 до 4 букв влево или вправо по алфавиту! Используй шкалу алфавита под карточкой.',
-                words: [
-                    { word: 'МАТРИЦА', theme: 'Киберпанк 💻' },
-                    { word: 'СПУТНИК', theme: 'Космос 🛰️' },
-                    { word: 'ИМПУЛЬС', theme: 'Энергия ⚡' },
-                    { word: 'ГОРИЗОНТ', theme: 'География 🌅' },
-                    { word: 'КВАНТУМ', theme: 'Наука ⚛️' }
-                ]
-            },
-            {
-                id: 4,
-                name: 'Латинский мост',
-                badge: 'Латиница QWERTY → Русская ЙЦУКЕН',
-                shortTitle: '4. Латиница',
-                scriptMode: 'en',
-                showAlphaDefault: false,
-                description: 'На карточке показан английский символ клавиши (QWERTY). Нажми русскую букву, расположенную на этой же клавише!',
-                words: [
-                    { word: 'КЛАВИША', theme: 'Периферия ⌨️' },
-                    { word: 'СИСТЕМА', theme: 'Технологии 🖥️' },
-                    { word: 'ПРОЦЕСС', theme: 'Ядро ⚙️' },
-                    { word: 'ТЕРМИНАЛ', theme: 'Консоль 📟' },
-                    { word: 'БРАУЗЕР', theme: 'Интернет 🌐' }
-                ]
-            },
-            {
-                id: 5,
-                name: 'Сеульский экспресс',
-                badge: 'Корейский алфавит (Хангыль) 🇰🇷',
-                shortTitle: '5. Корейский',
-                scriptMode: 'ko',
-                showAlphaDefault: false,
-                description: 'На клавишах появился корейский Хангыль! Найди показанный корейский символ на клавиатуре и нажми эту клавишу.',
-                words: [
-                    { word: 'ВОСТОК', theme: 'Путешествия 🏮' },
-                    { word: 'ДРАКОН', theme: 'Легенды 🐉' },
-                    { word: 'ЦВЕТОК', theme: 'Природа 🌸' },
-                    { word: 'ОКЕАН', theme: 'Стихия 🌊' },
-                    { word: 'НЕОН', theme: 'Ночной Сеул 🌃' }
-                ]
-            },
-            {
-                id: 6,
-                name: 'Тайны Иерусалима',
-                badge: 'Алфавит Иврит 🇮🇱',
-                shortTitle: '6. Иврит',
-                scriptMode: 'he',
-                showAlphaDefault: false,
-                description: 'На клавиатуре появились буквы иврита! Сопоставь крупный символ с клавишей и собери русское слово.',
-                words: [
-                    { word: 'СВИТОК', theme: 'Древность 📜' },
-                    { word: 'ПУСТЫНЯ', theme: 'Природа 🏜️' },
-                    { word: 'ЛЕГЕНДА', theme: 'История 🏛️' },
-                    { word: 'КАМЕНЬ', theme: 'Артефакты 🪨' },
-                    { word: 'ВРЕМЯ', theme: 'Вечность ⏳' }
-                ]
-            },
-            {
-                id: 7,
-                name: 'Мираж Востока',
-                badge: 'Арабская вязь 🌙',
-                shortTitle: '7. Арабский',
-                scriptMode: 'ar',
-                showAlphaDefault: false,
-                description: 'Арабский алфавит на клавишах! Внимательно сравни очертания арабской буквы и нажми соответствующую русскую клавишу.',
-                words: [
-                    { word: 'КАРАВАН', theme: 'Восток 🐪' },
-                    { word: 'ОАЗИС', theme: 'Природа 🌴' },
-                    { word: 'АЛХИМИЯ', theme: 'Наука древних ⚗️' },
-                    { word: 'ЗЕФИР', theme: 'Ветра 🌬️' },
-                    { word: 'РУБИН', theme: 'Сокровища ♦️' }
-                ]
-            },
-            {
-                id: 8,
+                mechanic: 'neighbors',
                 name: 'Соседи по ряду',
                 badge: 'Пространственный сдвиг по клавиатуре ⌨️',
-                shortTitle: '8. Соседи',
+                shortTitle: '2. Соседи',
                 scriptMode: 'en',
                 showAlphaDefault: false,
                 description: 'Показана соседняя клавиша! Найди показанную букву на клавиатуре и нажми клавишу СЛЕВА ⬅️ или СПРАВА ➡️ от неё в том же ряду.',
@@ -652,7 +545,110 @@
                 ]
             },
             {
+                id: 3,
+                mechanic: 'latin',
+                name: 'Латинский мост',
+                badge: 'Латиница QWERTY → Русская ЙЦУКЕН',
+                shortTitle: '3. Латиница',
+                scriptMode: 'en',
+                showAlphaDefault: false,
+                description: 'На карточке показан английский символ клавиши (QWERTY). Нажми русскую букву, расположенную на этой же клавише!',
+                words: [
+                    { word: 'КЛАВИША', theme: 'Периферия ⌨️' },
+                    { word: 'СИСТЕМА', theme: 'Технологии 🖥️' },
+                    { word: 'ПРОЦЕСС', theme: 'Ядро ⚙️' },
+                    { word: 'ТЕРМИНАЛ', theme: 'Консоль 📟' },
+                    { word: 'БРАУЗЕР', theme: 'Интернет 🌐' }
+                ]
+            },
+            {
+                id: 4,
+                mechanic: 'shift1',
+                name: 'Шаг в сторону',
+                badge: 'Шифр Цезаря • Сдвиг ±1',
+                shortTitle: '4. Сдвиг ±1',
+                scriptMode: 'en',
+                showAlphaDefault: true,
+                description: 'Буква на карточке сдвинута! Сдвинь её по русскому алфавиту на +1 ➡️ (следующая) или -1 ⬅️ (предыдущая), как указано под ней.',
+                words: [
+                    { word: 'ПАРОЛЬ', theme: 'Киберзащита 🔐' },
+                    { word: 'СЕКРЕТ', theme: 'Шпионаж 🕵️' },
+                    { word: 'ПОРТАЛ', theme: 'Фантастика 🌀' },
+                    { word: 'КРИСТАЛ', theme: 'Минералы 💎' },
+                    { word: 'МАГНИТ', theme: 'Физика 🧲' }
+                ]
+            },
+            {
+                id: 5,
+                mechanic: 'shift4',
+                name: 'Крипто-шторм',
+                badge: 'Шифр сдвига • ±1..4 по алфавиту',
+                shortTitle: '5. Сдвиг ±1..4',
+                scriptMode: 'en',
+                showAlphaDefault: true,
+                description: 'Случайный сдвиг от 1 до 4 букв влево или вправо по алфавиту! Используй шкалу алфавита под карточкой.',
+                words: [
+                    { word: 'МАТРИЦА', theme: 'Киберпанк 💻' },
+                    { word: 'СПУТНИК', theme: 'Космос 🛰️' },
+                    { word: 'ИМПУЛЬС', theme: 'Энергия ⚡' },
+                    { word: 'ГОРИЗОНТ', theme: 'География 🌅' },
+                    { word: 'КВАНТУМ', theme: 'Наука ⚛️' }
+                ]
+            },
+            {
+                id: 6,
+                mechanic: 'ko',
+                name: 'Сеульский экспресс',
+                badge: 'Корейский алфавит (Хангыль) 🇰🇷',
+                shortTitle: '6. Корейский',
+                scriptMode: 'ko',
+                showAlphaDefault: false,
+                description: 'На клавишах появился корейский Хангыль! Найди показанный корейский символ на клавиатуре и нажми эту клавишу.',
+                words: [
+                    { word: 'ВОСТОК', theme: 'Путешествия 🏮' },
+                    { word: 'ДРАКОН', theme: 'Легенды 🐉' },
+                    { word: 'ЦВЕТОК', theme: 'Природа 🌸' },
+                    { word: 'ОКЕАН', theme: 'Стихия 🌊' },
+                    { word: 'НЕОН', theme: 'Ночной Сеул 🌃' }
+                ]
+            },
+            {
+                id: 7,
+                mechanic: 'he',
+                name: 'Тайны Иерусалима',
+                badge: 'Алфавит Иврит 🇮🇱',
+                shortTitle: '7. Иврит',
+                scriptMode: 'he',
+                showAlphaDefault: false,
+                description: 'На клавиатуре появились буквы иврита! Сопоставь крупный символ с клавишей и собери русское слово.',
+                words: [
+                    { word: 'СВИТОК', theme: 'Древность 📜' },
+                    { word: 'ПУСТЫНЯ', theme: 'Природа 🏜️' },
+                    { word: 'ЛЕГЕНДА', theme: 'История 🏛️' },
+                    { word: 'КАМЕНЬ', theme: 'Артефакты 🪨' },
+                    { word: 'ВРЕМЯ', theme: 'Вечность ⏳' }
+                ]
+            },
+            {
+                id: 8,
+                mechanic: 'ar',
+                name: 'Мираж Востока',
+                badge: 'Арабская вязь 🌙',
+                shortTitle: '8. Арабский',
+                scriptMode: 'ar',
+                showAlphaDefault: false,
+                description: 'Арабский алфавит на клавишах! Внимательно сравни очертания арабской буквы и нажми соответствующую русскую клавишу.',
+                words: [
+                    { word: 'КАРАВАН', theme: 'Восток 🐪' },
+                    { word: 'ОАЗИС', theme: 'Природа 🌴' },
+                    { word: 'АЛХИМИЯ', theme: 'Наука древних ⚗️' },
+                    { word: 'ЗЕФИР', theme: 'Ветра 🌬️' },
+                    { word: 'РУБИН', theme: 'Сокровища ♦️' }
+                ]
+            },
+            {
                 id: 9,
+                mechanic: 'double_agent',
                 name: 'Двойной агент',
                 badge: 'Комбо: Латиница QWERTY + Сдвиг ±1',
                 shortTitle: '9. Комбо QWERTY±1',
@@ -669,6 +665,7 @@
             },
             {
                 id: 10,
+                mechanic: 'enigma',
                 name: 'Матрица Энигмы',
                 badge: 'Гранд-финал • Смена шифра на каждой букве!',
                 shortTitle: '10. Энигма',
@@ -777,16 +774,18 @@
            ========================================================================== */
         const state = {
             currentLevelIndex: 0, // 0..9 (corresponds to Level 1..10)
+            maxUnlockedLevelIndex: 0, // Initially only Level 1 (index 0) is unlocked
             wordsCompletedInLevel: 0,
             wordsTargetPerLevel: 3,
             wordPoolIndex: 0,
             currentWordObj: null,
             currentLetterIndex: 0,
-            currentChallenge: null, // Holds { targetRu, displaySymbol, mode, shift, sourceRu, instructionHtml, subtext, scriptTag, phoneticTag }
+            currentChallenge: null,
             score: 0,
             combo: 1,
             maxCombo: 1,
             hintActive: false,
+            hintUsedInLevel: false, // Allows only 1 hint press per level
             showAlphabet: false,
             expertHideRussian: false,
             completedLevels: new Set(),
@@ -801,20 +800,20 @@
             return RUS_ALPHABET[newIdx];
         }
 
-        // Generates the cipher challenge for a specific target Russian letter according to level rules
-        function createChallengeForLetter(targetRu, levelNum) {
+        // Generates the cipher challenge for a specific target Russian letter according to level mechanic
+        function createChallengeForLetter(targetRu, mechanicType) {
             const keyInfo = KEY_BY_RU[targetRu];
 
-            // For Level 10 (Enigma Matrix), pick a random sub-mode from Levels 2..9
-            let effectiveMode = levelNum;
-            if (levelNum === 10) {
-                const modes = [2, 3, 4, 5, 6, 7, 8, 9];
+            // For Level 10 (Enigma Matrix), pick a random sub-mode from the other mechanics
+            let effectiveMode = mechanicType;
+            if (mechanicType === 'enigma') {
+                const modes = ['neighbors', 'latin', 'shift1', 'shift4', 'ko', 'he', 'ar', 'double_agent'];
                 effectiveMode = modes[Math.floor(Math.random() * modes.length)];
             }
 
             // Build challenge object based on effectiveMode
             switch (effectiveMode) {
-                case 1: {
+                case 'direct': {
                     // Direct Russian letter
                     return {
                         targetRu,
@@ -826,13 +825,12 @@
                         phoneticTag: null,
                         badgeClass: 'from-indigo-600/90 to-cyan-600/90',
                         instructionHtml: `<i class="fa-solid fa-bullseye"></i> <span>Нажми букву «${targetRu}»</span>`,
-                        subtext: 'Уровень 1: нажимай показанную букву напрямую, чтобы собрать слово вверху'
+                        subtext: 'Уровень 1: нажимай показанную букву на физической клавиатуре, чтобы собрать слово вверху'
                     };
                 }
 
-                case 2: {
+                case 'shift1': {
                     // Alphabet shift by +1 or -1
-                    // playerShift is what the player MUST do to the displayed letter to reach targetRu
                     const playerShift = Math.random() < 0.5 ? 1 : -1;
                     const shownRu = shiftRussianLetter(targetRu, -playerShift);
                     const dirArrow = playerShift > 0 ? '+1 ➡️ (следующая по алфавиту)' : '-1 ⬅️ (предыдущая по алфавиту)';
@@ -850,7 +848,7 @@
                     };
                 }
 
-                case 3: {
+                case 'shift4': {
                     // Random alphabet shift ±1..4
                     const offsets = [-4, -3, -2, -1, 1, 2, 3, 4];
                     const playerShift = offsets[Math.floor(Math.random() * offsets.length)];
@@ -870,7 +868,7 @@
                     };
                 }
 
-                case 4: {
+                case 'latin': {
                     // Latin QWERTY keycap -> press Russian
                     return {
                         targetRu,
@@ -886,7 +884,7 @@
                     };
                 }
 
-                case 5: {
+                case 'ko': {
                     // Korean Hangul -> press Russian
                     return {
                         targetRu,
@@ -902,7 +900,7 @@
                     };
                 }
 
-                case 6: {
+                case 'he': {
                     // Hebrew -> press Russian
                     return {
                         targetRu,
@@ -918,7 +916,7 @@
                     };
                 }
 
-                case 7: {
+                case 'ar': {
                     // Arabic -> press Russian
                     return {
                         targetRu,
@@ -934,7 +932,7 @@
                     };
                 }
 
-                case 8: {
+                case 'neighbors': {
                     // Keyboard Row Neighbor (Left or Right on the physical keyboard row)
                     const rowArr = KEYBOARD_ROWS[keyInfo.row];
                     const possibleDirs = [];
@@ -961,7 +959,7 @@
                     };
                 }
 
-                case 9: {
+                case 'double_agent': {
                     // Double Agent: Show Latin QWERTY key of a shifted Russian letter (±1 in alphabet)
                     const playerShift = Math.random() < 0.5 ? 1 : -1;
                     const baseRu = shiftRussianLetter(targetRu, -playerShift);
@@ -988,7 +986,7 @@
            5. UI RENDERING & UPDATES
            ========================================================================== */
 
-        // Render the 10-level selector bar at the top
+        // Render the 10-level selector bar at the top (locked levels cannot be selected)
         function renderLevelSelector() {
             const container = document.getElementById('level-buttons-container');
             container.innerHTML = '';
@@ -996,22 +994,39 @@
             LEVELS.forEach((lvl, idx) => {
                 const isActive = idx === state.currentLevelIndex;
                 const isDone = state.completedLevels.has(lvl.id);
+                const isUnlocked = idx <= state.maxUnlockedLevelIndex;
 
                 const btn = document.createElement('button');
-                btn.onclick = () => selectLevel(idx);
+                btn.type = 'button';
+
+                if (isUnlocked) {
+                    btn.onclick = () => selectLevel(idx);
+                } else {
+                    btn.disabled = true;
+                    btn.title = 'Сначала пройдите предыдущий уровень';
+                }
+
                 btn.className = `px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 border ${
                     isActive
                         ? 'bg-gradient-to-r from-fuchsia-500 via-purple-600 to-cyan-500 text-white border-white/40 shadow-lg shadow-purple-500/30 scale-[1.03]'
-                        : isDone
-                            ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 border-emerald-500/30'
-                            : 'bg-slate-900/60 hover:bg-slate-800/80 text-slate-300 border-white/10'
+                        : !isUnlocked
+                            ? 'bg-slate-950/50 text-slate-500 border-white/5 opacity-50 cursor-not-allowed'
+                            : isDone
+                                ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 border-emerald-500/30'
+                                : 'bg-slate-900/60 hover:bg-slate-800/80 text-slate-300 border-white/10'
                 }`;
 
                 btn.innerHTML = `
                     <span class="w-4 h-4 rounded-full text-[10px] flex items-center justify-center ${
-                        isActive ? 'bg-white/25 text-white' : isDone ? 'bg-emerald-500 text-slate-950' : 'bg-white/10 text-slate-300'
+                        isActive
+                            ? 'bg-white/25 text-white'
+                            : !isUnlocked
+                                ? 'bg-slate-800 text-slate-500'
+                                : isDone
+                                    ? 'bg-emerald-500 text-slate-950'
+                                    : 'bg-white/10 text-slate-300'
                     }">
-                        ${isDone ? '<i class="fa-solid fa-check"></i>' : lvl.id}
+                        ${!isUnlocked ? '<i class="fa-solid fa-lock text-[8px]"></i>' : isDone ? '<i class="fa-solid fa-check"></i>' : lvl.id}
                     </span>
                     <span>${lvl.shortTitle.split('. ')[1]}</span>
                 `;
@@ -1139,10 +1154,8 @@
                     const isHintTarget = state.hintActive && state.currentChallenge && state.currentChallenge.targetRu === k.ru;
                     const isRefKey = state.currentChallenge && state.currentChallenge.referenceKeyRu === k.ru;
 
-                    const btn = document.createElement('button');
+                    const btn = document.createElement('div');
                     btn.id = `keycap-${k.ru}`;
-                    btn.type = 'button';
-                    btn.onclick = () => handleKeyInput(k.ru);
                     btn.className = `keycap h-12 sm:h-14 md:h-16 flex flex-col justify-between p-1.5 sm:p-2 select-none ${
                         isHintTarget ? 'key-hint' : isRefKey ? 'key-reference' : ''
                     }`;
@@ -1186,10 +1199,14 @@
            ========================================================================== */
 
         function selectLevel(levelIdx) {
+            if (levelIdx > state.maxUnlockedLevelIndex) return;
+
             state.currentLevelIndex = levelIdx;
             state.wordsCompletedInLevel = 0;
             state.wordPoolIndex = 0;
             state.hintActive = false;
+            state.hintUsedInLevel = false;
+            updateHintButtonVisibility();
 
             const lvl = LEVELS[levelIdx];
             state.showAlphabet = lvl.showAlphaDefault;
@@ -1215,7 +1232,7 @@
         function prepareCurrentLetterChallenge() {
             const lvl = LEVELS[state.currentLevelIndex];
             const targetRu = state.currentWordObj.word[state.currentLetterIndex];
-            state.currentChallenge = createChallengeForLetter(targetRu, lvl.id);
+            state.currentChallenge = createChallengeForLetter(targetRu, lvl.mechanic);
             state.hintActive = false;
 
             renderWordSlots();
@@ -1264,6 +1281,9 @@
                         if (state.wordsCompletedInLevel >= state.wordsTargetPerLevel) {
                             const currentLvl = LEVELS[state.currentLevelIndex];
                             state.completedLevels.add(currentLvl.id);
+                            if (state.currentLevelIndex + 1 < LEVELS.length) {
+                                state.maxUnlockedLevelIndex = Math.max(state.maxUnlockedLevelIndex, state.currentLevelIndex + 1);
+                            }
                             renderLevelSelector();
                             openLevelCompleteModal();
                         } else {
@@ -1322,9 +1342,17 @@
            7. HELPER CONTROLS & MODALS
            ========================================================================== */
 
+        function updateHintButtonVisibility() {
+            const btnHint = document.getElementById('btn-hint');
+            if (!btnHint) return;
+            btnHint.style.display = state.hintUsedInLevel ? 'none' : '';
+        }
+
         function triggerHint() {
-            if (!state.currentChallenge) return;
+            if (!state.currentChallenge || state.hintUsedInLevel) return;
             state.hintActive = true;
+            state.hintUsedInLevel = true;
+            updateHintButtonVisibility();
             playSound('hint');
             renderAlphabetStrip();
             renderKeyboard();
@@ -1413,6 +1441,7 @@
         function goToNextLevel() {
             closeLevelModal();
             const nextIdx = (state.currentLevelIndex + 1) % LEVELS.length;
+            state.maxUnlockedLevelIndex = Math.max(state.maxUnlockedLevelIndex, nextIdx);
             selectLevel(nextIdx);
         }
 
